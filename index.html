@@ -300,10 +300,8 @@ td input:focus,td select:focus{border-color:var(--blue);outline:none}
   <div class="modal">
     <h2>Email Estimate to Client</h2>
     <div class="status" id="emailStatus"></div>
-    <label class="lbl">To</label>
-    <input type="email" id="emailTo" placeholder="client@email.com"/>
-    <label class="lbl">Subject</label>
-    <input type="text" id="emailSubject"/>
+    <label class="lbl">To</label><input type="email" id="emailTo" placeholder="client@email.com"/>
+    <label class="lbl">Subject</label><input type="text" id="emailSubject"/>
     <label class="lbl">Personal Note</label>
     <textarea id="emailNote" rows="4" placeholder="Hi John, please find your estimate below. Let us know if you have any questions!"></textarea>
     <div class="modal-actions">
@@ -317,18 +315,9 @@ td input:focus,td select:focus{border-color:var(--blue);outline:none}
 pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 emailjs.init('HF6BW5yek293-CN4q');
 
-var lines = [];
-var logoUrl = null;
-var pricingDB = {};
-var winIdCtr = 0;
-var recognition = null;
-var isRecording = false;
-var timerInterval = null;
-var timerSeconds = 0;
-var fullTranscript = '';
-var CO_PHONE = '727-729-1432';
-var CO_EMAIL = 'kylestanton@stonewaterfl.com';
-var CO_WEB = 'stonewaterfl.com';
+var lines = [], logoUrl = null, pricingDB = {}, winIdCtr = 0;
+var recognition = null, isRecording = false, timerInterval = null, timerSeconds = 0, fullTranscript = '';
+var CO_PHONE = '727-729-1432', CO_EMAIL = 'kylestanton@stonewaterfl.com', CO_WEB = 'stonewaterfl.com';
 
 window.onload = function() {
   var td = new Date().toISOString().split('T')[0];
@@ -337,18 +326,13 @@ window.onload = function() {
   document.getElementById('estNum').value = 'EST-' + new Date().getFullYear() + '-' + (Math.floor(Math.random() * 900) + 100);
   addWinRow('window');
   loadPricing();
-  document.getElementById('emailModal').addEventListener('click', function(e) {
-    if (e.target === this) { closeEmailModal(); }
-  });
+  document.getElementById('emailModal').addEventListener('click', function(e) { if (e.target === this) closeEmailModal(); });
 };
 
 function loadPricing() {
   window.storage.get('pricingDB').then(function(r) {
     if (r && r.value) {
-      try {
-        var db = JSON.parse(r.value);
-        if (Object.keys(db).length) { pricingDB = db; showBanner(); refreshDropdowns(); }
-      } catch(e) {}
+      try { var db = JSON.parse(r.value); if (Object.keys(db).length) { pricingDB = db; showBanner(); refreshDropdowns(); } } catch(e) {}
     }
   }).catch(function() {});
 }
@@ -359,7 +343,9 @@ function uploadLogo(el) {
   r.onload = function(e) {
     logoUrl = e.target.result;
     var btn = document.querySelector('.logo-btn');
-    var img = btn.querySelector('img') || document.createElement('img');
+    var existing = btn.querySelector('img');
+    if (existing) existing.remove();
+    var img = document.createElement('img');
     img.src = logoUrl; img.style.cssText = 'position:absolute;width:100%;height:100%;object-fit:contain';
     btn.appendChild(img);
     document.getElementById('navInitials').style.display = 'none';
@@ -419,37 +405,25 @@ function clearPricing() {
 }
 
 function showBanner() {
-  var brands = Object.keys(pricingDB);
-  if (!brands.length) return;
+  var brands = Object.keys(pricingDB); if (!brands.length) return;
   document.getElementById('uploadPrompt').style.display = 'none';
   document.getElementById('pricingBanner').className = 'banner show';
   document.getElementById('bannerDetail').textContent = 'Brands: ' + brands.join(', ');
 }
 
 function parseRows(rows, name) {
-  var isSGD = name.toUpperCase().indexOf('SGD') >= 0;
-  var out = [];
+  var isSGD = name.toUpperCase().indexOf('SGD') >= 0, out = [];
   rows.forEach(function(row) {
     var n = {};
     Object.keys(row).forEach(function(k) { n[k.trim().toLowerCase()] = String(row[k]).trim(); });
-    function g() {
-      for (var i = 0; i < arguments.length; i++) {
-        var t = arguments[i];
-        if (n[t] != null && n[t] !== '') return n[t];
-        var k = Object.keys(n).find(function(k) { return k.indexOf(t) >= 0; });
-        if (k && n[k] !== '') return n[k];
-      }
-      return '';
-    }
+    function g() { for (var i = 0; i < arguments.length; i++) { var t = arguments[i]; if (n[t] != null && n[t] !== '') return n[t]; var k = Object.keys(n).find(function(k) { return k.indexOf(t) >= 0; }); if (k && n[k] !== '') return n[k]; } return ''; }
     function gn() { return parseFloat(String(g.apply(null, arguments)).replace(/[$,\s]/g, '')) || 0; }
     var w = gn('width'), h = gn('height');
     var type = isSGD ? 'sgd' : (g('type', 'style', 'series') || '').toLowerCase().trim();
     var color = (g('color', 'colour', 'finish') || '').toLowerCase().trim();
     var panels = gn('panels', 'panel');
     var price = gn('contractor price', 'contractor', 'price', 'cost', 'sell', 'amount', 'rate');
-    if (price > 0 && (w > 0 || h > 0)) {
-      out.push({type: type, width: w, height: h, price: price, color: color, panels: panels, isSGD: isSGD});
-    }
+    if (price > 0 && (w > 0 || h > 0)) out.push({type: type, width: w, height: h, price: price, color: color, panels: panels, isSGD: isSGD});
   });
   return out;
 }
@@ -468,15 +442,14 @@ function getOptionAdders(brand, frameColor, glassColor, grid, houseType) {
 }
 
 function addWinRow(kind) {
-  var id = 'w' + (winIdCtr++);
-  var isSGD = kind === 'sgd';
+  var id = 'w' + (winIdCtr++), isSGD = kind === 'sgd';
   var tbody = document.getElementById('winBody');
   var tr = document.createElement('tr'); tr.id = 'wr-' + id;
   var bSel = mkSel('wb-' + id, [['', 'Select Brand']].concat(getBrands(isSGD).map(function(b) { return [b, b]; })));
   bSel.addEventListener('change', function() { populateTypes(id, this.value); });
   tr.appendChild(mkTd(bSel, '110px'));
   if (isSGD) { var nt = document.createElement('td'); nt.innerHTML = '<span style="font-size:.78rem;color:var(--muted)">N/A</span>'; tr.appendChild(nt); }
-  else { tr.appendChild(mkTd(mkSel('wt-' + id, [['', 'Any']]), '100px')); }
+  else tr.appendChild(mkTd(mkSel('wt-' + id, [['', 'Any']]), '100px'));
   tr.appendChild(mkTd(mkNum('ww-' + id, '36'), '65px'));
   tr.appendChild(mkTd(mkNum('wh-' + id, '48'), '65px'));
   tr.appendChild(mkTd(mkSel('wc-' + id, [['', 'Any'], ['White', 'White'], ['Black/Bronze', 'Black/Bronze'], ['Black', 'Black']]), '110px'));
@@ -484,7 +457,7 @@ function addWinRow(kind) {
   tr.appendChild(mkTd(mkSel('wimp-' + id, [['', 'Any'], ['Yes', 'Impact'], ['No', 'Non-Impact']]), '100px'));
   tr.appendChild(mkTd(mkSel('wgrid-' + id, [['', 'Any'], ['Yes', 'Yes'], ['No', 'No']]), '70px'));
   tr.appendChild(mkTd(mkSel('wht-' + id, [['', 'Any'], ['Wood Frame', 'Wood Frame'], ['Concrete Block', 'Concrete Block']]), '130px'));
-  if (isSGD) { tr.appendChild(mkTd(mkSel('wp-' + id, [['2','2'],['3','3'],['4','4'],['5','5'],['6','6']]), '60px')); }
+  if (isSGD) tr.appendChild(mkTd(mkSel('wp-' + id, [['2','2'],['3','3'],['4','4'],['5','5'],['6','6']]), '60px'));
   else { var pt = document.createElement('td'); pt.innerHTML = '<span style="font-size:.78rem;color:var(--muted)">N/A</span>'; tr.appendChild(pt); }
   var qi = mkNum('wq-' + id, ''); qi.value = '1'; qi.min = '1';
   tr.appendChild(mkTd(qi, '50px'));
@@ -501,12 +474,9 @@ function refreshDropdowns() {
   document.getElementById('winBody').querySelectorAll('tr').forEach(function(tr) {
     var id = tr.id.replace('wr-', '');
     var sel = document.getElementById('wb-' + id); if (!sel) return;
-    var cur = sel.value; var isSGD = !document.getElementById('wt-' + id);
+    var cur = sel.value, isSGD = !document.getElementById('wt-' + id);
     sel.innerHTML = '<option value="">Select Brand</option>';
-    getBrands(isSGD).forEach(function(b) {
-      var op = document.createElement('option'); op.value = b; op.textContent = b;
-      if (b === cur) op.selected = true; sel.appendChild(op);
-    });
+    getBrands(isSGD).forEach(function(b) { var op = document.createElement('option'); op.value = b; op.textContent = b; if (b === cur) op.selected = true; sel.appendChild(op); });
     if (cur) populateTypes(id, cur);
   });
 }
@@ -514,20 +484,8 @@ function refreshDropdowns() {
 function mkTd(el, minW) { var td = document.createElement('td'); if (minW) td.style.minWidth = minW; td.appendChild(el); return td; }
 function mkSel(id, opts) { var s = document.createElement('select'); s.id = id; opts.forEach(function(o) { var op = document.createElement('option'); op.value = o[0]; op.textContent = o[1]; s.appendChild(op); }); return s; }
 function mkNum(id, ph) { var i = document.createElement('input'); i.type = 'number'; i.id = id; i.placeholder = ph; i.min = '1'; i.step = '0.5'; return i; }
-
-function getBrands(isSGD) {
-  var all = Object.keys(pricingDB);
-  if (!all.length) return isSGD ? ['PGT SGD', 'CWS SGD'] : ['PGT Windows', 'CWS Windows'];
-  return all.filter(function(b) { return isSGD ? b.toUpperCase().indexOf('SGD') >= 0 : b.toUpperCase().indexOf('SGD') < 0; });
-}
-
-function populateTypes(id, brand) {
-  var sel = document.getElementById('wt-' + id); if (!sel) return;
-  var entries = pricingDB[brand] || [];
-  var types = [];
-  entries.forEach(function(e) { if (e.type && e.type !== 'sgd' && types.indexOf(e.type) < 0) types.push(e.type); });
-  sel.innerHTML = '<option value="">Any</option>' + types.map(function(t) { return '<option value="' + t + '">' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join('');
-}
+function getBrands(isSGD) { var all = Object.keys(pricingDB); if (!all.length) return isSGD ? ['PGT SGD', 'CWS SGD'] : ['PGT Windows', 'CWS Windows']; return all.filter(function(b) { return isSGD ? b.toUpperCase().indexOf('SGD') >= 0 : b.toUpperCase().indexOf('SGD') < 0; }); }
+function populateTypes(id, brand) { var sel = document.getElementById('wt-' + id); if (!sel) return; var entries = pricingDB[brand] || [], types = []; entries.forEach(function(e) { if (e.type && e.type !== 'sgd' && types.indexOf(e.type) < 0) types.push(e.type); }); sel.innerHTML = '<option value="">Any</option>' + types.map(function(t) { return '<option value="' + t + '">' + t.charAt(0).toUpperCase() + t.slice(1) + '</option>'; }).join(''); }
 
 function priceItems() {
   var rows = document.getElementById('winBody').querySelectorAll('tr');
@@ -535,14 +493,12 @@ function priceItems() {
   if (!Object.keys(pricingDB).length) { setSt('sManual', 'error', 'Upload pricing spreadsheet first.'); return; }
   lines = []; var lid = 0, approx = 0;
   rows.forEach(function(tr) {
-    var id = tr.id.replace('wr-', '');
-    var isSGD = !document.getElementById('wt-' + id);
+    var id = tr.id.replace('wr-', ''), isSGD = !document.getElementById('wt-' + id);
     var brand = gv('wb-' + id), type = (gv('wt-' + id) || '').toLowerCase();
     var w = parseFloat(gv('ww-' + id)) || 0, h = parseFloat(gv('wh-' + id)) || 0;
     var frameColor = gv('wc-' + id), glassColor = gv('wgc-' + id);
     var impact = gv('wimp-' + id), grid = gv('wgrid-' + id), houseType = gv('wht-' + id);
-    var panels = parseInt(gv('wp-' + id)) || 0;
-    var qty = parseInt(gv('wq-' + id)) || 1, label = gv('wl-' + id);
+    var panels = parseInt(gv('wp-' + id)) || 0, qty = parseInt(gv('wq-' + id)) || 1, label = gv('wl-' + id);
     if (!brand || !w || !h) return;
     var pool = pricingDB[brand] || [];
     if (type) { var ft = pool.filter(function(e) { return !e.type || e.type === type; }); if (ft.length) pool = ft; }
@@ -589,18 +545,10 @@ async function handlePDF(el) {
     var total = pdf.numPages, pages = [];
     for (var p = 1; p <= total; p++) {
       document.getElementById('lmsg').textContent = 'Extracting page ' + p + ' of ' + total;
-      var pg = await pdf.getPage(p);
-      var tc = await pg.getTextContent();
-      var sorted = tc.items.slice().sort(function(a, b) {
-        var ay = Math.round(a.transform[5] / 4) * 4, by = Math.round(b.transform[5] / 4) * 4;
-        return ay !== by ? by - ay : a.transform[4] - b.transform[4];
-      });
+      var pg = await pdf.getPage(p), tc = await pg.getTextContent();
+      var sorted = tc.items.slice().sort(function(a, b) { var ay = Math.round(a.transform[5]/4)*4, by = Math.round(b.transform[5]/4)*4; return ay !== by ? by - ay : a.transform[4] - b.transform[4]; });
       var txt = '=== PAGE ' + p + ' ===\n', ly = null;
-      for (var j = 0; j < sorted.length; j++) {
-        var it = sorted[j]; var y = Math.round(it.transform[5] / 4) * 4;
-        if (ly !== null && y !== ly) txt += '\n';
-        txt += it.str + ' '; ly = y;
-      }
+      for (var j = 0; j < sorted.length; j++) { var it = sorted[j], y = Math.round(it.transform[5]/4)*4; if (ly !== null && y !== ly) txt += '\n'; txt += it.str + ' '; ly = y; }
       pages.push(txt);
     }
     var bs = 3, batches = [];
@@ -608,40 +556,28 @@ async function handlePDF(el) {
     var all = [], idc = 0;
     for (var b = 0; b < batches.length; b++) {
       var sp = b * bs + 1, ep = Math.min(sp + bs - 1, total);
-      document.getElementById('lmsg').textContent = 'AI reading pages ' + sp + ' to ' + ep + ' batch ' + (b + 1) + ' of ' + batches.length;
+      document.getElementById('lmsg').textContent = 'AI reading pages ' + sp + ' to ' + ep + ' batch ' + (b+1) + ' of ' + batches.length;
       var prompt = 'Extract ALL line items from these estimate pages. Return ONLY a JSON array, no markdown. Each item: "desc","qty"(number),"unit"(ea/sf/lf/hr/ls),"supplierPrice"(number). Multi-part items: prefix [Multi-Part] and use total price. Skip headers/totals. Return [] if none. Pages: ' + batches[b].join('\n').substring(0, 10000);
       try {
-        var res = await fetch('https://api.anthropic.com/v1/messages', {
-          method: 'POST', headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify({model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{role: 'user', content: prompt}]})
-        });
+        var res = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{role: 'user', content: prompt}]})});
         var data = await res.json();
         var raw = data.content.map(function(c) { return c.type === 'text' ? c.text : ''; }).join('').replace(/```json|```/g, '').trim();
         var parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) {
-          parsed.forEach(function(it) {
-            if (!it.desc) return;
-            all.push({id: idc++, desc: String(it.desc), qty: Number(it.qty) || 1, unit: String(it.unit || 'ea'), supplierPrice: Number(it.supplierPrice) || 0, labor: 175, margin: 35});
-          });
-        }
+        if (Array.isArray(parsed)) parsed.forEach(function(it) { if (!it.desc) return; all.push({id: idc++, desc: String(it.desc), qty: Number(it.qty)||1, unit: String(it.unit||'ea'), supplierPrice: Number(it.supplierPrice)||0, labor: 175, margin: 35}); });
       } catch(e) { console.warn('Batch error', e); }
     }
     lines = all; renderLines();
     document.getElementById('loader1').className = 'loader';
     setSt('s1', 'success', all.length + ' items extracted from ' + total + ' pages.');
     goTab(2);
-  } catch(e) {
-    document.getElementById('loader1').className = 'loader';
-    setSt('s1', 'error', 'Error: ' + e.message);
-  }
+  } catch(e) { document.getElementById('loader1').className = 'loader'; setSt('s1', 'error', 'Error: ' + e.message); }
 }
 
 function renderLines() {
   var tb = document.getElementById('lineBody'); tb.innerHTML = '';
   lines.forEach(function(l, i) {
     var tr = document.createElement('tr'); tr.id = 'lr' + l.id;
-    tr.innerHTML =
-      '<td style="color:var(--muted);font-size:.76rem">' + (i + 1) + (l.approx ? '<span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:8px;font-size:.68rem;margin-left:3px;font-weight:700">~</span>' : '') + '</td>' +
+    tr.innerHTML = '<td style="color:var(--muted);font-size:.76rem">' + (i+1) + (l.approx ? '<span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:8px;font-size:.68rem;margin-left:3px;font-weight:700">~</span>' : '') + '</td>' +
       '<td><input type="text" value="' + esc(l.desc) + '" style="min-width:180px" data-id="' + l.id + '" data-field="desc"/></td>' +
       '<td><input type="number" value="' + l.qty + '" style="width:50px" data-id="' + l.id + '" data-field="qty"/></td>' +
       '<td><input type="text" value="' + esc(l.unit) + '" style="width:45px" data-id="' + l.id + '" data-field="unit"/></td>' +
@@ -662,11 +598,7 @@ function renderLines() {
     });
   });
   tb.querySelectorAll('button[data-del]').forEach(function(el) {
-    el.addEventListener('click', function() {
-      var id = parseInt(this.dataset.del);
-      lines = lines.filter(function(x) { return x.id !== id; });
-      renderLines();
-    });
+    el.addEventListener('click', function() { var id = parseInt(this.dataset.del); lines = lines.filter(function(x) { return x.id !== id; }); renderLines(); });
   });
   renderTotals();
 }
@@ -674,10 +606,7 @@ function renderLines() {
 function addLine() { lines.push({id: Date.now(), desc: 'New Item', qty: 1, unit: 'ea', supplierPrice: 0, labor: 175, margin: 35}); renderLines(); }
 function addLabor() { lines.push({id: Date.now(), desc: 'Additional Labor', qty: 1, unit: 'hr', supplierPrice: 0, labor: 175, margin: 35}); renderLines(); }
 function cp(l) { var s = l.supplierPrice * l.qty; var m = (Number(l.margin) || 35) / 100; return s / (1 - m) + (l.labor * l.qty); }
-function renderTotals() {
-  var sub = lines.reduce(function(s, l) { return s + cp(l); }, 0);
-  document.getElementById('totals2').innerHTML = '<div class="t-row"><span>Subtotal</span><span>$' + fmt(sub) + '</span></div><div class="t-row grand"><span>TOTAL</span><span>$' + fmt(sub) + '</span></div>';
-}
+function renderTotals() { var sub = lines.reduce(function(s, l) { return s + cp(l); }, 0); document.getElementById('totals2').innerHTML = '<div class="t-row"><span>Subtotal</span><span>$' + fmt(sub) + '</span></div><div class="t-row grand"><span>TOTAL</span><span>$' + fmt(sub) + '</span></div>'; }
 
 function buildPreview() {
   document.getElementById('pNum').textContent = gv('estNum');
@@ -689,10 +618,7 @@ function buildPreview() {
   var eli = document.getElementById('estLogo');
   if (logoUrl) { eli.innerHTML = ''; var img = document.createElement('img'); img.src = logoUrl; img.style.cssText = 'width:100%;height:100%;object-fit:contain'; eli.appendChild(img); }
   var rows = '';
-  lines.forEach(function(l, i) {
-    var t = cp(l), u = l.qty > 0 ? t / l.qty : t;
-    rows += '<tr><td style="color:var(--muted);font-size:.76rem">' + (i + 1) + '</td><td>' + esc(l.desc) + '</td><td style="text-align:right">' + l.qty + '</td><td style="text-align:right">' + esc(l.unit) + '</td><td style="text-align:right">$' + fmt(u) + '</td><td style="text-align:right;font-weight:700;color:var(--blue)">$' + fmt(t) + '</td></tr>';
-  });
+  lines.forEach(function(l, i) { var t = cp(l), u = l.qty > 0 ? t / l.qty : t; rows += '<tr><td style="color:var(--muted);font-size:.76rem">' + (i+1) + '</td><td>' + esc(l.desc) + '</td><td style="text-align:right">' + l.qty + '</td><td style="text-align:right">' + esc(l.unit) + '</td><td style="text-align:right">$' + fmt(u) + '</td><td style="text-align:right;font-weight:700;color:var(--blue)">$' + fmt(t) + '</td></tr>'; });
   document.getElementById('prevLines').innerHTML = rows;
   var sub = lines.reduce(function(s, l) { return s + cp(l); }, 0);
   document.getElementById('prevTotals').innerHTML = '<div class="t-row"><span>Subtotal</span><span>$' + fmt(sub) + '</span></div><div class="t-row grand"><span>TOTAL</span><span>$' + fmt(sub) + '</span></div>';
@@ -710,12 +636,9 @@ function printEst() {
 }
 
 function newEst() {
-  lines = [];
-  document.getElementById('winBody').innerHTML = '';
-  document.getElementById('pdfFile').value = '';
+  lines = []; document.getElementById('winBody').innerHTML = ''; document.getElementById('pdfFile').value = '';
   setSt('s1', '', ''); setSt('s2', '', '');
-  addWinRow('window');
-  goTab(1);
+  addWinRow('window'); goTab(1);
 }
 
 function openEmailModal() {
@@ -726,9 +649,7 @@ function openEmailModal() {
   document.getElementById('emailModal').className = 'modal-overlay show';
 }
 
-function closeEmailModal() {
-  document.getElementById('emailModal').className = 'modal-overlay';
-}
+function closeEmailModal() { document.getElementById('emailModal').className = 'modal-overlay'; }
 
 function buildEstimateBody() {
   var body = 'ESTIMATE #' + gv('estNum') + '\n';
@@ -736,17 +657,11 @@ function buildEstimateBody() {
   body += 'Prepared For:\n' + [gv('cName'), gv('cPhone'), gv('cEmail')].filter(Boolean).join(' | ') + '\n';
   if (gv('cAddr')) body += gv('cAddr') + '\n';
   if (gv('cProj')) body += gv('cProj') + '\n';
-  body += '\n------------------------------------\n';
-  body += 'LINE ITEMS\n------------------------------------\n';
-  lines.forEach(function(l, i) {
-    var t = cp(l), u = l.qty > 0 ? t / l.qty : t;
-    body += (i + 1) + '. ' + l.desc + '\n';
-    body += '   Qty: ' + l.qty + ' ' + l.unit + ' | Unit Price: $' + fmt(u) + ' | Total: $' + fmt(t) + '\n';
-  });
-  body += '\n------------------------------------\n';
+  body += '\n------------------------------------\nLINE ITEMS\n------------------------------------\n';
+  lines.forEach(function(l, i) { var t = cp(l), u = l.qty > 0 ? t / l.qty : t; body += (i+1) + '. ' + l.desc + '\n   Qty: ' + l.qty + ' ' + l.unit + ' | Unit: $' + fmt(u) + ' | Total: $' + fmt(t) + '\n'; });
   var sub = lines.reduce(function(s, l) { return s + cp(l); }, 0);
-  body += 'TOTAL: $' + fmt(sub) + '\n';
-  if (gv('estNotes')) body += '\nNotes and Terms:\n' + gv('estNotes') + '\n';
+  body += '\n------------------------------------\nTOTAL: $' + fmt(sub) + '\n';
+  if (gv('estNotes')) body += '\nNotes:\n' + gv('estNotes') + '\n';
   return body;
 }
 
@@ -756,14 +671,13 @@ function sendEmail() {
   var btn = document.getElementById('sendEmailBtn');
   btn.textContent = 'Sending...'; btn.disabled = true;
   setSt('emailStatus', 'info', 'Sending email...');
-  var estBody = buildEstimateBody();
   var sub = lines.reduce(function(s, l) { return s + cp(l); }, 0);
   var params = {};
   params.to_email = to;
   params.to_name = gv('cName') || 'Valued Client';
   params.subject = document.getElementById('emailSubject').value;
   params.message = document.getElementById('emailNote').value;
-  params.estimate_body = estBody;
+  params.estimate_body = buildEstimateBody();
   params.company_phone = CO_PHONE;
   params.company_email = CO_EMAIL;
   params.company_website = CO_WEB;
@@ -778,40 +692,27 @@ function sendEmail() {
   });
 }
 
-function toggleRecording() {
-  if (isRecording) { stopRecording(); } else { startRecording(); }
-}
+function toggleRecording() { if (isRecording) stopRecording(); else startRecording(); }
 
 function startRecording() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { setSt('sVoice', 'error', 'Speech recognition not supported. Please use Chrome or Safari.'); return; }
+  if (!SR) { setSt('sVoice', 'error', 'Speech recognition not supported. Use Chrome or Safari.'); return; }
   fullTranscript = '';
-  recognition = new SR();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
+  recognition = new SR(); recognition.continuous = true; recognition.interimResults = true; recognition.lang = 'en-US';
   recognition.onresult = function(e) {
     var interim = '', final = '';
-    for (var i = e.resultIndex; i < e.results.length; i++) {
-      if (e.results[i].isFinal) { final += e.results[i][0].transcript + ' '; }
-      else { interim += e.results[i][0].transcript; }
-    }
+    for (var i = e.resultIndex; i < e.results.length; i++) { if (e.results[i].isFinal) final += e.results[i][0].transcript + ' '; else interim += e.results[i][0].transcript; }
     fullTranscript += final;
     document.getElementById('transcriptText').value = fullTranscript + interim;
   };
   recognition.onerror = function(e) { setSt('sVoice', 'error', 'Recording error: ' + e.error); stopRecording(); };
-  recognition.start();
-  isRecording = true; timerSeconds = 0;
+  recognition.start(); isRecording = true; timerSeconds = 0;
   document.getElementById('micBtn').className = 'mic-btn recording';
   document.getElementById('voiceStatus').textContent = 'Recording... Click to stop';
   document.getElementById('voiceTimer').style.display = 'block';
   document.getElementById('transcriptBox').style.display = 'block';
   setSt('sVoice', 'info', 'Listening... speak your estimate details');
-  timerInterval = setInterval(function() {
-    timerSeconds++;
-    var m = Math.floor(timerSeconds / 60), s = timerSeconds % 60;
-    document.getElementById('voiceTimer').textContent = m + ':' + (s < 10 ? '0' : '') + s;
-  }, 1000);
+  timerInterval = setInterval(function() { timerSeconds++; var m = Math.floor(timerSeconds/60), s = timerSeconds%60; document.getElementById('voiceTimer').textContent = m + ':' + (s < 10 ? '0' : '') + s; }, 1000);
 }
 
 function stopRecording() {
@@ -824,8 +725,7 @@ function stopRecording() {
 }
 
 function clearVoice() {
-  fullTranscript = '';
-  document.getElementById('transcriptText').value = '';
+  fullTranscript = ''; document.getElementById('transcriptText').value = '';
   document.getElementById('transcriptBox').style.display = 'none';
   document.getElementById('voiceStatus').textContent = 'Click the mic to start recording';
   setSt('sVoice', '', '');
@@ -837,12 +737,9 @@ async function processVoice() {
   document.getElementById('voiceLoader').className = 'loader show';
   setSt('sVoice', 'info', 'AI is parsing your estimate...');
   var brandList = Object.keys(pricingDB).length ? Object.keys(pricingDB).join(', ') : 'PGT Windows, CWS Windows, PGT SGD, CWS SGD';
-  var prompt = 'You are parsing a spoken construction estimate. Extract all information and return ONLY a valid JSON object with no markdown.\n\nAvailable brands: ' + brandList + '\n\nReturn this exact structure:\n{"client":{"name":"","email":"","address":"","description":""},"windows":[{"brand":"","type":"","width":0,"height":0,"frameColor":"","glassColor":"","impact":"","grid":"","houseType":"","qty":1,"label":""}]}\n\nRules:\n- Match brand names to available brands as closely as possible\n- impact should be "Yes" or "No" or "" if not mentioned\n- frameColor should be "White", "Black/Bronze", "Black" or "" if not mentioned\n- glassColor should be "Clear", "Gray", "Other" or "" if not mentioned\n- grid should be "Yes" or "No" or "" if not mentioned\n- houseType should be "Wood Frame" or "Concrete Block" or "" if not mentioned\n- If multiple rooms with same specs create separate entries\n- width and height are numbers in inches\n- Return empty string for any field not mentioned\n\nTranscript:\n' + transcript;
+  var prompt = 'You are parsing a spoken construction estimate. Extract all information and return ONLY a valid JSON object with no markdown.\n\nAvailable brands: ' + brandList + '\n\nReturn this exact structure:\n{"client":{"name":"","email":"","address":"","description":""},"windows":[{"brand":"","type":"","width":0,"height":0,"frameColor":"","glassColor":"","impact":"","grid":"","houseType":"","qty":1,"label":""}]}\n\nRules:\n- impact: "Yes" or "No" or ""\n- frameColor: "White", "Black/Bronze", "Black" or ""\n- glassColor: "Clear", "Gray", "Other" or ""\n- grid: "Yes" or "No" or ""\n- houseType: "Wood Frame" or "Concrete Block" or ""\n- width and height in inches\n- Return "" for any field not mentioned\n\nTranscript:\n' + transcript;
   try {
-    var res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST', headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{role: 'user', content: prompt}]})
-    });
+    var res = await fetch('https://api.anthropic.com/v1/messages', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({model: 'claude-sonnet-4-20250514', max_tokens: 2000, messages: [{role: 'user', content: prompt}]})});
     var data = await res.json();
     var raw = data.content.map(function(c) { return c.type === 'text' ? c.text : ''; }).join('').replace(/```json|```/g, '').trim();
     var parsed = JSON.parse(raw);
@@ -850,10 +747,7 @@ async function processVoice() {
     document.getElementById('voiceLoader').className = 'loader';
     setSt('sVoice', 'success', 'Done! Review client info and windows then continue.');
     setTimeout(function() { setMode('manual'); goTab(3); }, 1500);
-  } catch(e) {
-    document.getElementById('voiceLoader').className = 'loader';
-    setSt('sVoice', 'error', 'Error parsing: ' + e.message);
-  }
+  } catch(e) { document.getElementById('voiceLoader').className = 'loader'; setSt('sVoice', 'error', 'Error parsing: ' + e.message); }
 }
 
 function applyVoiceData(data) {
@@ -864,31 +758,15 @@ function applyVoiceData(data) {
     if (data.client.description) document.getElementById('cProj').value = data.client.description;
   }
   if (data.windows && data.windows.length) {
-    document.getElementById('winBody').innerHTML = '';
-    winIdCtr = 0;
+    document.getElementById('winBody').innerHTML = ''; winIdCtr = 0;
     data.windows.forEach(function(win) {
       var isSGD = win.brand && win.brand.toUpperCase().indexOf('SGD') >= 0;
       addWinRow(isSGD ? 'sgd' : 'window');
       var lastId = 'w' + (winIdCtr - 1);
       var bSel = document.getElementById('wb-' + lastId);
-      if (bSel && win.brand) {
-        var opts = bSel.querySelectorAll('option');
-        opts.forEach(function(o) {
-          if (win.brand && o.value && o.value.toLowerCase().indexOf(win.brand.toLowerCase().substring(0, 3)) >= 0) { bSel.value = o.value; populateTypes(lastId, o.value); }
-        });
-      }
-      if (win.type) {
-        var tSel = document.getElementById('wt-' + lastId);
-        if (tSel) {
-          tSel.querySelectorAll('option').forEach(function(o) {
-            if (win.type && o.value && o.value.toLowerCase().indexOf(win.type.toLowerCase().substring(0, 3)) >= 0) { tSel.value = o.value; }
-          });
-        }
-      }
+      if (bSel && win.brand) { bSel.querySelectorAll('option').forEach(function(o) { if (win.brand && o.value && o.value.toLowerCase().indexOf(win.brand.toLowerCase().substring(0,3)) >= 0) { bSel.value = o.value; populateTypes(lastId, o.value); } }); }
       var fields = {ww: win.width, wh: win.height, wc: win.frameColor, wgc: win.glassColor, wimp: win.impact, wgrid: win.grid, wht: win.houseType, wl: win.label, wq: win.qty};
-      Object.keys(fields).forEach(function(prefix) {
-        if (fields[prefix]) { var el = document.getElementById(prefix + '-' + lastId); if (el) el.value = fields[prefix]; }
-      });
+      Object.keys(fields).forEach(function(prefix) { if (fields[prefix]) { var el = document.getElementById(prefix + '-' + lastId); if (el) el.value = fields[prefix]; } });
     });
   }
 }
